@@ -1,0 +1,31 @@
+name: Telegram Sync
+on:
+  schedule:
+    - cron: "* * * * *"
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci || npm install
+        working-directory: bot
+      - name: Run bot (30s interval for 2 minutes)
+        run: |
+          node bot.js
+        working-directory: bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          RUN_CONTINUOUS: "true"
+          POLL_INTERVAL_MS: "30000"
+          EXIT_AFTER_MS: "120000"
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "Auto sync models"; git push; fi

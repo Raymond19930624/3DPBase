@@ -1,0 +1,14 @@
+{
+  "name": "3dp-base-library-bot",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.7.7"
+  },
+  "scripts": {
+    "start": "node bot.js",
+    "delete": "node delete.js",
+    "backfill": "node backfill.js",
+    "dedupe": "node dedupe.js"
+  }
+}
