@@ -198,7 +198,7 @@ function setupLogin(){
   const input=document.getElementById('admin-pass');
   const btn=document.getElementById('admin-login');
   btn.addEventListener('click',()=>{
-    const ok=input.value.trim()==='06248255';
+    const ok=input.value.trim()==='0000';
     const body=document.getElementById('admin-body');
     if(ok){ lock.style.display='none'; body.classList.remove('hidden'); initConfig(); persistConfig(); loadModels().then(render); } else { input.value=''; }
   });
