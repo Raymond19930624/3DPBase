@@ -20,8 +20,8 @@ function initConfig(){
   const hasT=!!localStorage.getItem('admin.token');
   const hasR=!!localStorage.getItem('admin.repo');
   if(hasT && hasR && cfg) cfg.classList.add('hidden');
-  const syncBtn=document.getElementById('sync-btn');
-  if(syncBtn){ syncBtn.addEventListener('click', dispatchSync); }
+  const syncFixed=document.getElementById('sync-btn-fixed');
+  if(syncFixed){ syncFixed.addEventListener('click', dispatchSync); }
 }
 function render(list){
   const root=document.getElementById('admin-cards');
