@@ -110,6 +110,13 @@ async function downloadDocument(apiBase, token, fileId, destPath) {
   return destPath;
 }
 
+async function tgDelete(apiBase, chatId, messageId) {
+  try {
+    const res = await axios.post(`${apiBase}/deleteMessage`, { chat_id: chatId, message_id: messageId });
+    return res.data && res.data.ok;
+  } catch { return false; }
+}
+
 // Polling configuration for CI environments
 // Read from env at module scope as defaults; loop will capture fresh values
 const defaultPollIntervalMs = Number(process.env.POLL_INTERVAL_MS || 3000);
@@ -191,6 +198,8 @@ async function run() {
     } else {
       const oldId = exists.id;
       const newId = oldId;
+      const prevDoc = exists.doc_message_id || null;
+      const prevPhoto = exists.photo_message_id || null;
 
       if (!exists.name && parsed.name) {
         exists.name = parsed.name;
@@ -215,6 +224,13 @@ async function run() {
         if (models[i] !== exists && (models[i].file_id_doc === exists.file_id_doc || models[i].doc_message_id === exists.doc_message_id)) {
           models.splice(i, 1);
         }
+      }
+
+      if (token && channelId && prevDoc && prevDoc !== baseDoc.message_id) {
+        await tgDelete(apiBase, channelId, prevDoc);
+      }
+      if (token && channelId && prevPhoto && prevPhoto !== pm.message_id) {
+        await tgDelete(apiBase, channelId, prevPhoto);
       }
     }
 
