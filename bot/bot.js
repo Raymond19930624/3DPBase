@@ -111,8 +111,10 @@ async function downloadDocument(apiBase, token, fileId, destPath) {
   return destPath;
 }
 
-const pollIntervalMs = Number(process.env.POLL_INTERVAL_MS || 3000);
-const exitAfterMs = Number(process.env.EXIT_AFTER_MS || 0);
+// Polling configuration for CI environments
+// Read from env at module scope as defaults; loop will capture fresh values
+const defaultPollIntervalMs = Number(process.env.POLL_INTERVAL_MS || 3000);
+const defaultExitAfterMs = Number(process.env.EXIT_AFTER_MS || 0);
 
 async function run() {
   const config = readJson(configPath, {});
@@ -268,10 +270,12 @@ const cfg = readJson(configPath, {});
 if (cfg.RUN_CONTINUOUS || (process.env.RUN_CONTINUOUS && process.env.RUN_CONTINUOUS === "true")) {
   (async function loop(){
     const start = Date.now();
+    const maxMs = Number(process.env.EXIT_AFTER_MS || defaultExitAfterMs || 0);
+    const intervalMs = Number(process.env.POLL_INTERVAL_MS || defaultPollIntervalMs || 3000);
     while (true) {
       try { await run(); } catch {}
-      if (exitAfterMs && (Date.now() - start) >= exitAfterMs) break;
-      await new Promise((r) => setTimeout(r, pollIntervalMs));
+      if (maxMs && (Date.now() - start) >= maxMs) break;
+      await new Promise((r) => setTimeout(r, intervalMs));
     }
   })();
 } else {

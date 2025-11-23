@@ -1,6 +1,9 @@
 async function loadModels(){
-  const res=await fetch('models.json?_='+Date.now(),{cache:'no-store'});
-  return await res.json();
+  try{
+    const res=await fetch('models.json?_='+Date.now(),{cache:'no-store'});
+    if(!res.ok) return [];
+    return await res.json();
+  }catch{ return []; }
 }
 function getToken(){ return localStorage.getItem('admin.token') || document.getElementById('token').value.trim(); }
 function getRepo(){ return localStorage.getItem('admin.repo') || document.getElementById('repo').value.trim(); }
