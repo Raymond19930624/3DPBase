@@ -5,6 +5,7 @@ async function loadModels(){
     return await res.json();
   }catch{ return []; }
 }
+const pending={ deletes:new Set(), edits:new Map() };
 function getToken(){ return localStorage.getItem('admin.token') || document.getElementById('token').value.trim(); }
 function getRepo(){ return localStorage.getItem('admin.repo') || document.getElementById('repo').value.trim(); }
 function persistConfig(){
@@ -22,6 +23,16 @@ function initConfig(){
   if(hasT && hasR && cfg) cfg.classList.add('hidden');
   const syncFixed=document.getElementById('sync-btn-fixed');
   if(syncFixed){ syncFixed.addEventListener('click', dispatchSync); }
+  const actionsBar=document.querySelector('.actions');
+  if(actionsBar){
+    const applyBtn=document.createElement('button');
+    applyBtn.id='apply-btn-fixed';
+    applyBtn.className='btn';
+    applyBtn.textContent='送出變更';
+    applyBtn.style.marginLeft='10px';
+    actionsBar.appendChild(applyBtn);
+    applyBtn.addEventListener('click', dispatchApply);
+  }
 }
 function render(list){
   const root=document.getElementById('admin-cards');
@@ -48,14 +59,23 @@ function render(list){
     }
     const actions=document.createElement('div');
     actions.className='actions';
+    const checkbox=document.createElement('input');
+    checkbox.type='checkbox';
+    checkbox.title='勾選批次刪除';
+    checkbox.checked=pending.deletes.has(m.id);
+    checkbox.addEventListener('change',()=>{
+      if(checkbox.checked){ pending.deletes.add(m.id); card.classList.add('selected'); }
+      else { pending.deletes.delete(m.id); card.classList.remove('selected'); }
+    });
     const editBtn=document.createElement('button');
     editBtn.className='btn btn-secondary';
     editBtn.textContent='編輯';
     editBtn.addEventListener('click',()=>openEdit(m));
     const delBtn=document.createElement('button');
     delBtn.className='btn btn-danger';
-    delBtn.textContent='刪除';
-    delBtn.addEventListener('click',()=>confirmAndDelete(m));
+    delBtn.textContent='加入刪除';
+    delBtn.addEventListener('click',()=>{ checkbox.checked=true; checkbox.dispatchEvent(new Event('change')); });
+    actions.appendChild(checkbox);
     actions.appendChild(editBtn);
     actions.appendChild(delBtn);
     card.appendChild(thumb); card.appendChild(title); card.appendChild(tags); card.appendChild(actions);
@@ -66,15 +86,9 @@ async function dispatchDelete(m){
   const pat=getToken();
   const repo=getRepo();
   if(!pat||!repo){ alert('請先輸入 GitHub PAT 與 owner/repo'); return; }
-  const url=`https://api.github.com/repos/${repo}/actions/workflows/admin-delete.yml/dispatches`;
-  const body={ref:'main',inputs:{id:m.id,name:''}};
-  try{
-    const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
-    if(res.ok){ alert('已送出刪除請求'); }
-    else { const txt=await res.text(); alert('刪除請求失敗：'+res.status+'\n'+txt); }
-  }catch(e){ alert('網路錯誤：'+e); }
+  pending.deletes.add(m.id);
+  alert('已加入刪除清單，請點「送出變更」統一同步');
 }
-
 function openEdit(m){
   const modal=document.createElement('div');
   modal.className='lightbox show';
@@ -110,63 +124,15 @@ function openEdit(m){
   modal.addEventListener('click',(e)=>{ if(e.target===modal) document.body.removeChild(modal); });
   document.body.appendChild(modal);
 }
-
 async function dispatchEdit(id,name,tags,modal){
   const pat=getToken();
   const repo=getRepo();
   if(!pat||!repo){ alert('請先輸入 GitHub PAT 與 owner/repo'); return; }
-  const url=`https://api.github.com/repos/${repo}/actions/workflows/admin-edit.yml/dispatches`;
-  const body={ref:'main',inputs:{id,name,tags}};
-  try{
-    const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
-    if(res.ok){ if(modal) document.body.removeChild(modal); alert('已送出編輯請求'); }
-    else { const txt=await res.text(); alert('編輯請求失敗：'+res.status+'\n'+txt); }
-  }catch(e){ alert('網路錯誤：'+e); }
+  pending.edits.set(id,{id,name,tags});
+  if(modal) document.body.removeChild(modal);
+  alert('已加入編輯變更，請點「送出變更」統一同步');
 }
-
-function confirmAndDelete(m){
-  const modal=document.createElement('div');
-  modal.className='lightbox show';
-  const box=document.createElement('div');
-  box.className='card';
-  box.style.maxWidth='520px';
-  box.style.width='90vw';
-  const title=document.createElement('div');
-  title.className='title';
-  title.textContent='確認刪除';
-  const info=document.createElement('div');
-  info.style.padding='0 14px 10px';
-  info.style.color='#c7ccdd';
-  info.textContent=`將刪除：「${m.name}」及其檔案與頻道貼文。`;
-  const tip=document.createElement('div');
-  tip.style.padding='0 14px';
-  tip.style.color='#aab0c0';
-  tip.textContent='為避免誤刪，請輸入上方名稱以確認：';
-  const input=document.createElement('input');
-  input.style.margin='12px';
-  input.placeholder='請輸入完整名稱';
-  const actions=document.createElement('div');
-  actions.className='actions';
-  const ok=document.createElement('button');
-  ok.className='btn btn-danger';
-  ok.textContent='確定刪除';
-  ok.addEventListener('click',async()=>{
-    if(input.value.trim()!==String(m.name).trim()){ alert('名稱不相符，已取消'); return; }
-    ok.disabled=true;
-    await dispatchDelete(m);
-    document.body.removeChild(modal);
-  });
-  const cancel=document.createElement('button');
-  cancel.className='btn btn-secondary';
-  cancel.textContent='取消';
-  cancel.addEventListener('click',()=>{ document.body.removeChild(modal); });
-  actions.appendChild(ok); actions.appendChild(cancel);
-  box.appendChild(title); box.appendChild(info); box.appendChild(tip); box.appendChild(input); box.appendChild(actions);
-  modal.innerHTML=''; modal.appendChild(box);
-  modal.addEventListener('click',(e)=>{ if(e.target===modal) document.body.removeChild(modal); });
-  document.body.appendChild(modal);
-}
-
+function confirmAndDelete(m){ pending.deletes.add(m.id); alert('已加入刪除清單'); }
 async function dispatchSync(){
   persistConfig();
   const pat=getToken();
@@ -178,6 +144,20 @@ async function dispatchSync(){
     const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
     if(res.ok){ alert('已觸發同步'); }
     else { const txt=await res.text(); alert('觸發失敗：'+res.status+'\n'+txt); }
+  }catch(e){ alert('網路錯誤：'+e); }
+}
+async function dispatchApply(){
+  persistConfig();
+  const pat=getToken();
+  const repo=getRepo();
+  if(!pat||!repo){ alert('請先輸入 GitHub PAT 與 owner/repo'); return; }
+  const url=`https://api.github.com/repos/${repo}/actions/workflows/admin-apply.yml/dispatches`;
+  const ops={deletes:Array.from(pending.deletes),edits:Array.from(pending.edits.values())};
+  const body={ref:'main',inputs:{ops:JSON.stringify(ops)}};
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
+    if(res.ok){ pending.deletes.clear(); pending.edits.clear(); alert('已送出統一變更與同步'); }
+    else { const txt=await res.text(); alert('送出失敗：'+res.status+'\n'+txt); }
   }catch(e){ alert('網路錯誤：'+e); }
 }
 function setupLogin(){
