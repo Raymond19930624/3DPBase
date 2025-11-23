@@ -140,7 +140,10 @@ async function run() {
     if (m.photo && m.reply_to_message) photoList.push(m);
   }
 
-  const models = readJson(modelsPath, []);
+  let models = readJson(modelsPath, []);
+  if (!Array.isArray(models) || models.length === 0) {
+    models = readJson(webModelsPath, []);
+  }
   for (const pm of photoList) {
     const replied = pm.reply_to_message;
     const baseDoc = docMap.get(replied.message_id) || replied;
