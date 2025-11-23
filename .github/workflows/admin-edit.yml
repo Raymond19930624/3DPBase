@@ -1,0 +1,38 @@
+name: Admin Edit
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: id
+        required: true
+        type: string
+      name:
+        description: name
+        required: true
+        type: string
+      tags:
+        description: tags (comma separated)
+        required: false
+        type: string
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci || npm install
+        working-directory: bot
+      - name: Execute edit
+        run: |
+          node edit.js --id "${{ github.event.inputs.id }}" --name "${{ github.event.inputs.name }}" --tags "${{ github.event.inputs.tags }}"
+        working-directory: bot
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "Admin edit"; git push; fi

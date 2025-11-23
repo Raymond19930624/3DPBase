@@ -32,6 +32,16 @@ async function tgDelete(chatId, messageId) {
   } catch { return false; }
 }
 
+function msgIdFromUrl(u) {
+  if (!u) return null;
+  try {
+    const parts = String(u).split("/");
+    const last = parts[parts.length - 1];
+    const n = parseInt(last, 10);
+    return Number.isFinite(n) ? n : null;
+  } catch { return null; }
+}
+
 async function main() {
   const id = arg("id");
   const name = arg("name");
@@ -55,8 +65,10 @@ async function main() {
   writeJson(modelsPath, models);
   writeJson(webModelsPath, models);
 
-  if (token && channelId && item.doc_message_id) await tgDelete(channelId, item.doc_message_id);
-  if (token && channelId && item.photo_message_id) await tgDelete(channelId, item.photo_message_id);
+  const docMsg = item.doc_message_id || msgIdFromUrl(item.downloadUrl);
+  const photoMsg = item.photo_message_id || null;
+  if (token && channelId && docMsg) await tgDelete(channelId, docMsg);
+  if (token && channelId && photoMsg) await tgDelete(channelId, photoMsg);
 }
 
 main();

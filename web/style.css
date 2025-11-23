@@ -19,6 +19,8 @@ body { margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Can
 .tag { background: linear-gradient(135deg, #101531, #1c2244); color: #c7ccdd; padding: 5px 10px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border) }
 .actions { padding: 14px; margin-top: auto; display: flex }
 .btn { display: inline-block; padding: 10px 14px; border-radius: 10px; text-decoration: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; font-weight: 700; box-shadow: 0 8px 18px rgba(108,140,255,.35) }
+.btn-secondary { background: linear-gradient(135deg, #2ea0ff, #6c8cff); box-shadow: 0 8px 18px rgba(46,160,255,.35) }
+.btn-danger { background: linear-gradient(135deg, #ff5c7a, #ff2e52); box-shadow: 0 8px 18px rgba(255,92,122,.35) }
 @media (max-width: 960px) { .grid { grid-template-columns: repeat(3,1fr) } }
 @media (max-width: 720px) { .grid { grid-template-columns: repeat(2,1fr) } }
 @media (max-width: 480px) { .grid { grid-template-columns: 1fr } }

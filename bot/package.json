@@ -9,6 +9,7 @@
     "start": "node bot.js",
     "delete": "node delete.js",
     "backfill": "node backfill.js",
+    "edit": "node edit.js",
     "dedupe": "node dedupe.js"
   }
 }
