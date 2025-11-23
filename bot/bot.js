@@ -201,12 +201,11 @@ async function run() {
       const prevDoc = exists.doc_message_id || null;
       const prevPhoto = exists.photo_message_id || null;
 
-      if (!exists.name && parsed.name) {
+      if (parsed.name) {
         exists.name = parsed.name;
       }
       if (Array.isArray(parsed.tags) && parsed.tags.length) {
-        const merged = Array.from(new Set([...(exists.tags || []), ...parsed.tags]));
-        exists.tags = merged;
+        exists.tags = parsed.tags;
       }
       exists.file_id_image = bestPhoto.file_id;
       exists.doc_message_id = exists.doc_message_id || baseDoc.message_id;
