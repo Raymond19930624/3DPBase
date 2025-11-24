@@ -150,13 +150,16 @@ async function run() {
   for (const pm of photoList) {
     const replied = pm.reply_to_message;
     const baseDoc = docMap.get(replied.message_id) || replied;
-    if (!baseDoc || !baseDoc.document) continue;
+    const repliedId = replied && replied.message_id;
+    let baseHasDoc = !!(baseDoc && baseDoc.document);
 
-    const captionSource = pm.caption || baseDoc.caption || replied.caption || "";
-    const parsed = parseCaption(captionSource, baseDoc.document.file_name || "");
+    const captionSource = pm.caption || (baseDoc && baseDoc.caption) || (replied && replied.caption) || "";
+    const parsed = parseCaption(captionSource, baseHasDoc ? (baseDoc.document.file_name || "") : "");
     let id = slugify(parsed.name);
-    if (!id) id = String(baseDoc.message_id);
-    let exists = models.find((m) => m.file_id_doc === baseDoc.document.file_id || m.doc_message_id === baseDoc.message_id);
+    if (!id) id = String(baseHasDoc ? baseDoc.message_id : repliedId);
+    let exists = baseHasDoc
+      ? models.find((m) => m.file_id_doc === baseDoc.document.file_id || m.doc_message_id === baseDoc.message_id)
+      : models.find((m) => m.doc_message_id === repliedId);
     const duplicateIdx = [];
     for (let i = 0; i < models.length; i++) {
       const mm = models[i];
@@ -171,9 +174,9 @@ async function run() {
     const bestPhoto = largestPhoto(pm.photo) || null;
     if (!bestPhoto) continue;
 
-    const downloadUrl = buildDownloadUrl(baseDoc.chat || pm.chat, baseDoc.message_id);
+    const downloadUrl = buildDownloadUrl((baseHasDoc ? (baseDoc.chat) : pm.chat) || pm.chat, baseHasDoc ? baseDoc.message_id : repliedId);
 
-    const fileName = baseDoc.document.file_name || `${id}`;
+    const fileName = baseHasDoc ? (baseDoc.document.file_name || `${id}`) : (exists && exists.directUrl ? path.basename(exists.directUrl) : `${id}`);
     const fileDir = path.join(filesDir, id);
     const fileDest = path.join(fileDir, fileName);
     fs.mkdirSync(fileDir, { recursive: true });
@@ -181,6 +184,7 @@ async function run() {
     const imgDest = path.join(imagesDir, `${id}.jpg`);
 
     if (!exists) {
+      if (!baseHasDoc) continue;
       const slugConflict = models.find((m) => m.id === id && m.file_id_doc !== baseDoc.document.file_id);
       if (slugConflict) id = `${id}-${baseDoc.message_id}`;
       const entry = {
@@ -213,8 +217,10 @@ async function run() {
 
       const existingDirect = exists.directUrl || "";
       const currentFileName = existingDirect ? path.basename(existingDirect) : fileName;
-      exists.file_id_doc = baseDoc.document.file_id;
-      exists.doc_message_id = baseDoc.message_id;
+      if (baseHasDoc) {
+        exists.file_id_doc = baseDoc.document.file_id;
+        exists.doc_message_id = baseDoc.message_id;
+      }
       exists.photo_message_id = pm.message_id;
       exists.downloadUrl = downloadUrl;
       exists.directUrl = `files/${newId}/${currentFileName}`;
@@ -225,7 +231,7 @@ async function run() {
         }
       }
 
-      if (token && channelId && prevDoc && prevDoc !== baseDoc.message_id) {
+      if (token && channelId && prevDoc && baseHasDoc && prevDoc !== baseDoc.message_id) {
         await tgDelete(apiBase, channelId, prevDoc);
       }
       if (token && channelId && prevPhoto && prevPhoto !== pm.message_id) {
@@ -233,12 +239,10 @@ async function run() {
       }
     }
 
-    try {
-      await downloadImage(apiBase, token, bestPhoto.file_id, imgDest);
-    } catch (e) {}
+    try { await downloadImage(apiBase, token, bestPhoto.file_id, imgDest); } catch (e) {}
 
     try {
-      if (!fs.existsSync(fileDest)) {
+      if (baseHasDoc && !fs.existsSync(fileDest)) {
         await downloadDocument(apiBase, token, baseDoc.document.file_id, fileDest);
       }
     } catch (e) {}
