@@ -56,7 +56,8 @@ function render(list){
     const thumb=document.createElement('div');
     thumb.className='thumb';
     const img=document.createElement('img');
-    img.src=`images/${m.id}.jpg`;
+    const v=m.photo_message_id||m.file_id_image||Date.now();
+    img.src=`images/${m.id}.jpg?v=${v}`;
     img.alt=m.name;
     thumb.appendChild(img);
     const title=document.createElement('div');

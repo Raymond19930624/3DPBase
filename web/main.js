@@ -32,13 +32,14 @@ function render(models) {
     const thumb = document.createElement("div");
     thumb.className = "thumb";
   const img = document.createElement("img");
-  img.src = `images/${m.id}.jpg`;
+  const v = m.photo_message_id || m.file_id_image || Date.now();
+  img.src = `images/${m.id}.jpg?v=${v}`;
   img.alt = m.name;
   img.onerror = () => { thumb.classList.add("fallback"); img.style.display = "none"; };
     img.addEventListener("click", () => {
       const lb = document.getElementById("lightbox");
       const lbImg = document.getElementById("lightbox-img");
-      lbImg.src = `images/${m.id}.jpg`;
+      lbImg.src = `images/${m.id}.jpg?v=${v}`;
       lb.classList.add("show");
     });
     thumb.appendChild(img);
