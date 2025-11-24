@@ -67,7 +67,7 @@ async function getAllUpdates(apiBase, offset) {
   let next = offset || 0;
   while (true) {
     const res = await axios.get(`${apiBase}/getUpdates`, {
-      params: { offset: next, timeout: 30 }
+      params: { offset: next, timeout: 30, allowed_updates: ["channel_post","message"] }
     });
     if (!res.data || !res.data.ok) break;
     const arr = res.data.result || [];
