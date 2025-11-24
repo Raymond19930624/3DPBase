@@ -7,21 +7,19 @@ async function loadModels(){
 }
 const pending={ deletes:new Set(), edits:new Map() };
 let selectMode=false;
-function getToken(){ return localStorage.getItem('admin.token') || document.getElementById('token').value.trim(); }
+function getToken(){ return document.getElementById('token').value.trim(); }
 function getRepo(){ return localStorage.getItem('admin.repo') || document.getElementById('repo').value.trim(); }
 function persistConfig(){
   const t=document.getElementById('token').value.trim();
   const r=document.getElementById('repo').value.trim();
-  if(t) localStorage.setItem('admin.token', t);
   if(r) localStorage.setItem('admin.repo', r);
   const cfg=document.getElementById('admin-config');
-  if(localStorage.getItem('admin.token') && localStorage.getItem('admin.repo') && cfg) cfg.classList.add('hidden');
+  if(localStorage.getItem('admin.repo') && cfg) cfg.classList.add('hidden');
 }
 function initConfig(){
   const cfg=document.getElementById('admin-config');
-  const hasT=!!localStorage.getItem('admin.token');
   const hasR=!!localStorage.getItem('admin.repo');
-  if(hasT && hasR && cfg) cfg.classList.add('hidden');
+  if(hasR && cfg) cfg.classList.add('hidden');
   const syncFixed=document.getElementById('sync-btn-fixed');
   if(syncFixed){ syncFixed.addEventListener('click', dispatchSync); }
   const dm=document.getElementById('delete-mode-btn');
@@ -140,7 +138,11 @@ async function dispatchSync(){
   try{
     const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
     if(res.ok){ alert('已觸發同步'); }
-    else { const txt=await res.text(); alert('觸發失敗：'+res.status+'\n'+txt); }
+    else {
+      const txt=await res.text();
+      if(res.status===401){ try{ localStorage.removeItem('admin.token'); }catch{} }
+      alert('觸發失敗：'+res.status+'\n'+txt);
+    }
   }catch(e){ alert('網路錯誤：'+e); }
 }
 function enterDeleteMode(){ selectMode=true; pending.deletes.clear(); toggleDeleteUI(true); loadModels().then(render); }
@@ -168,7 +170,7 @@ async function confirmDelete(){
   try{
     const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
     if(res.ok){ exitDeleteMode(); alert('已送出批次刪除與同步'); }
-    else { const txt=await res.text(); alert('送出失敗：'+res.status+'\n'+txt); }
+    else { const txt=await res.text(); if(res.status===401){ try{ localStorage.removeItem('admin.token'); }catch{} } alert('送出失敗：'+res.status+'\n'+txt); }
   }catch(e){ alert('網路錯誤：'+e); }
 }
 async function dispatchApply(){
@@ -182,7 +184,7 @@ async function dispatchApply(){
   try{
     const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
     if(res.ok){ pending.deletes.clear(); pending.edits.clear(); alert('已送出統一變更與同步'); }
-    else { const txt=await res.text(); alert('送出失敗：'+res.status+'\n'+txt); }
+    else { const txt=await res.text(); if(res.status===401){ try{ localStorage.removeItem('admin.token'); }catch{} } alert('送出失敗：'+res.status+'\n'+txt); }
   }catch(e){ alert('網路錯誤：'+e); }
   updateActionButtons();
 }
