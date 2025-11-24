@@ -29,7 +29,9 @@ function persistConfig(){
   }
   if(r) localStorage.setItem('admin.repo', r);
   const cfg=document.getElementById('admin-config');
-  if(localStorage.getItem('admin.repo') && cfg) cfg.classList.add('hidden');
+  const hasT = !!(t || sessionStorage.getItem('admin.token') || localStorage.getItem('admin.token'));
+  const hasR = !!(r || localStorage.getItem('admin.repo') || DEFAULT_REPO);
+  if(cfg){ if(hasT && hasR) cfg.classList.add('hidden'); else cfg.classList.remove('hidden'); }
 }
 function initConfig(){
   const cfg=document.getElementById('admin-config');
@@ -38,8 +40,9 @@ function initConfig(){
   if(tokenEl && tokenMem) tokenEl.value=tokenMem;
   const repoEl=document.getElementById('repo');
   if(repoEl && !repoEl.value){ repoEl.value=getRepo(); }
-  const hasR=!!getRepo();
-  if(hasR && cfg) cfg.classList.add('hidden');
+  const hasT = !!getToken();
+  const hasR = !!getRepo();
+  if(cfg){ if(hasT && hasR) cfg.classList.add('hidden'); else cfg.classList.remove('hidden'); }
   const syncFixed=document.getElementById('sync-btn-fixed');
   if(syncFixed){ syncFixed.addEventListener('click', dispatchSync); }
   const dm=document.getElementById('delete-mode-btn');
