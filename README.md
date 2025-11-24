@@ -38,5 +38,5 @@ tags: gundam, 1/144
 5. GitHub Pages 自動更新顯示
 
 ## 注意事項
-- 下載連結一律使用 `https://t.me/c/<ID>/<message_id>`（以頻道 ID 為準，對頻道改名具備抗改名能力）
+- 下載連結一律使用 `https://t.me/c/<ID>/<message_id>`（依頻道 ID，對改名具備抗改名能力）
 - 圖片由 Bot 下載保存於 `web/images`，前端依 `id` 對應顯示
