@@ -20,6 +20,10 @@ function writeJson(p, obj) {
   fs.writeFileSync(p, JSON.stringify(obj, null, 2));
 }
 
+function stripExt(s){
+  return String(s || "").replace(/\.[a-z0-9]+$/i, "");
+}
+
 function slugify(name) {
   return String(name || "").toLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
@@ -152,7 +156,7 @@ async function run() {
     let baseHasDoc = !!(baseDoc && baseDoc.document);
 
     const captionSource = pm.caption || (baseDoc && baseDoc.caption) || (replied && replied.caption) || "";
-    const parsed = parseCaption(captionSource, baseHasDoc ? (baseDoc.document.file_name || "") : "");
+    const parsed = parseCaption(captionSource, baseHasDoc ? stripExt(baseDoc.document.file_name || "") : "");
     let id = slugify(parsed.name);
     if (!id) id = String(baseHasDoc ? baseDoc.message_id : repliedId);
     let exists = baseHasDoc
